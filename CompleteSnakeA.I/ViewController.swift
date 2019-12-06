@@ -15,7 +15,7 @@ class ViewController: UIViewController {
     var gameTimer: Timer?
     var snakeArr = [CustomCell]()
     var snakeTagNumber: Set<Int> = []
-    var randomMovement = [1, -1, 17, -17]
+    var randomMovement: Set<Int> = [1, -1, 17, -17]
     var rightEdgeNumbers: Set<Int> = [17, 34, 51, 68, 85, 102, 119, 136, 153, 170, 187, 204, 221, 238, 255, 272, 289]
     var leftEdgeNumber: Set<Int> = [18, 35, 52, 69, 86, 103, 120, 137, 154, 171, 188, 205, 222, 239, 256, 273, 290]
     var topRowNumber: Set<Int> =  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
@@ -49,12 +49,12 @@ class ViewController: UIViewController {
                 cellCollection.randomElement()?.backgroundColor = .red
             }
             let startingPoint = cellCollection.randomElement()!
-            startingPoint.backgroundColor = .green
+            startingPoint.backgroundColor = .blue
             snakeArr.append(startingPoint)
             snakeTagNumber.insert(startingPoint.tag)
             count = 0
             button.setTitle("Reset", for: .normal)
-            gameTimer = Timer.scheduledTimer(timeInterval: 0.0050, target: self, selector: #selector(onTimerFires), userInfo: nil, repeats: true)
+            gameTimer = Timer.scheduledTimer(timeInterval: 0.075, target: self, selector: #selector(onTimerFires), userInfo: nil, repeats: true)
         } else {
             for pixel in cellCollection {
                 pixel.backgroundColor = .black
@@ -113,42 +113,103 @@ extension ViewController {
     func moveSnake() {
         var movablePixel = false
         var movingDirection = 0
+        var previous = snakeArr[snakeArr.count - 1].tag
         
         while movablePixel == false {
-            movingDirection = randomMovement.randomElement()!
-            if containsInTheDict(movementNumber: movingDirection, tagNumber: snakeArr.last!.tag){
+            movingDirection = randomMovement.remove(randomMovement.randomElement()!)!
+            if containsInTheDict(movementNumber: movingDirection, tagNumber: snakeArr.last!.tag) && movingDirection + snakeArr.last!.tag != previous {
                 movablePixel = true
+                randomMovement = [1, -1, 17, -17]
+            } else if randomMovement.isEmpty {
+                gameTimer?.invalidate()
+                button.setTitle("Start", for: .normal)
+                randomMovement = [1, -1, 17, -17]
+                snakeTagNumber = []
+                snakeArr = []
+                break
             }
+        }
+        for (index, pixel) in snakeArr.enumerated() where cellCollection[(snakeArr[snakeArr.count - 1].tag) + (movingDirection)].backgroundColor != .red{
+                if cellCollection[(pixel.tag) + (movingDirection)].backgroundColor == .red && pixel == snakeArr.last! {
+                    cellCollection[(pixel.tag) + (movingDirection)].backgroundColor = .green
+                    snakeArr.append(cellCollection[(pixel.tag) + (movingDirection)])
+                    snakeTagNumber.insert(cellCollection[(pixel.tag) + (movingDirection)].tag)
+                } else if index == 0 && snakeArr.count > 1 {
+                    snakeArr[index].backgroundColor = .black
+                    snakeTagNumber.insert(snakeArr[index + 1].tag)
+                    snakeTagNumber.remove(snakeArr[index].tag)
+                    snakeArr[index] = snakeArr[index + 1]
+                    snakeArr[index].backgroundColor = .green
+                } else if pixel != snakeArr.last {
+                    snakeTagNumber.insert(snakeArr[index + 1].tag)
+                    snakeTagNumber.remove(snakeArr[index].tag)
+                    snakeArr[index] = snakeArr[index + 1]
+                    snakeArr[index].backgroundColor = .green
+                } else if snakeArr.count == 1 {
+                    snakeArr[index].backgroundColor = .black
+                    snakeTagNumber.remove(snakeArr[index].tag)
+                    snakeArr[index] = cellCollection[(pixel.tag) + (movingDirection)]
+                    snakeTagNumber.insert(snakeArr[index].tag)
+                    snakeArr[index].backgroundColor = .green
+                } else {
+                    snakeTagNumber.insert(cellCollection[(pixel.tag) + (movingDirection)].tag)
+                    snakeTagNumber.remove(snakeArr[index].tag)
+                    snakeArr[index] = cellCollection[(pixel.tag) + (movingDirection)]
+                    snakeArr[index].backgroundColor = .green
+                }
         }
         
-        for (index, pixel) in snakeArr.enumerated() {
-            print((pixel.tag) + (movingDirection))
-            if cellCollection[(pixel.tag) + (movingDirection)].backgroundColor == .red && pixel == snakeArr.last! {
-                cellCollection[(pixel.tag) + (movingDirection)].backgroundColor = .green
-                snakeArr.append(cellCollection[(pixel.tag) + (movingDirection)])
-                snakeTagNumber.insert(cellCollection[(pixel.tag) + (movingDirection)].tag)
-            } else if index == 0 && snakeArr.count > 1 {
-                snakeArr[index].backgroundColor = .black
-                snakeArr[index] = snakeArr[index + 1]
-                snakeArr[index].backgroundColor = .green
-            } else if pixel != snakeArr.last {
-                snakeArr[index] = snakeArr[index + 1]
-                snakeArr[index].backgroundColor = .green
-            } else if snakeArr.count == 1 {
-                snakeArr[index].backgroundColor = .black
-                snakeArr[index] = cellCollection[(pixel.tag) + (movingDirection)]
-                snakeArr[index].backgroundColor = .green
-            } else {
-                snakeArr[index] = cellCollection[(pixel.tag) + (movingDirection)]
-                snakeArr[index].backgroundColor = .green
-            }
+        if cellCollection[(snakeArr[snakeArr.count - 1].tag) + (movingDirection)].backgroundColor == .red {
+            cellCollection[(snakeArr[snakeArr.count - 1].tag) + (movingDirection)].backgroundColor = .green
+            snakeArr.append(cellCollection[(snakeArr[snakeArr.count - 1].tag) + (movingDirection)])
+            snakeTagNumber.insert(cellCollection[(snakeArr[snakeArr.count - 1].tag) + (movingDirection)].tag)
         }
+//        var count = snakeArr.count - 1
+//        for _ in 0..<snakeArr.count {
+//            if cellCollection[(snakeArr[count].tag) + (movingDirection)].backgroundColor == .red {
+//                cellCollection[(snakeArr[count].tag) + (movingDirection)].backgroundColor = .green
+//                snakeArr.append(cellCollection[(snakeArr[count].tag) + (movingDirection)])
+//                snakeTagNumber.insert(cellCollection[(snakeArr[count].tag) + (movingDirection)].tag)
+//            } else if count == 0 && snakeArr.count > 1 {
+//                snakeArr[count].backgroundColor = .black
+//                snakeTagNumber.insert(snakeArr[count + 1].tag)
+//                snakeTagNumber.remove(snakeArr[count].tag)
+//                snakeArr[count] = snakeArr[count + 1]
+//                snakeArr[count].backgroundColor = .green
+//            } else if count != snakeArr.count - 1 {
+//                snakeTagNumber.remove(snakeArr[count].tag)
+//                snakeArr[count] = snakeArr[count + 1]
+//                snakeTagNumber.insert(snakeArr[count].tag)
+//                snakeArr[count].backgroundColor = .green
+//            } else if snakeArr.count == 1 {
+//                snakeArr[count].backgroundColor = .black
+//                snakeTagNumber.remove(snakeArr[count].tag)
+//                snakeArr[count] = cellCollection[(snakeArr[count].tag) + (movingDirection)]
+//                snakeTagNumber.insert(snakeArr[count].tag)
+//                snakeArr[count].backgroundColor = .green
+//            } else {
+//                snakeTagNumber.insert(cellCollection[(snakeArr[count].tag) + (movingDirection)].tag)
+//                snakeTagNumber.remove(snakeArr[count].tag)
+//                snakeArr[count] = cellCollection[(snakeArr[count].tag) + (movingDirection)]
+//                snakeArr[count].backgroundColor = .green
+//            }
+//            count -= 1
+//
+//            if snakeArr.count > 1 {
+//                previous = snakeArr[snakeArr.count - 2].tag
+//            }
+//        }
+//        snakeArr[snakeArr.count - 1].backgroundColor = .blue
+        
     }
     
     func containsInTheDict(movementNumber: Int, tagNumber: Int) -> Bool {
         let number = movementNumber + tagNumber
-        
-        if !((movementNumber == 1 && rightEdgeNumbers.contains(number)) || (movementNumber == -1 && leftEdgeNumber.contains(number)) || (snakeTagNumber.contains(number)) || (topRowNumber.contains(number) && movementNumber == -17) || (bottomRowNumber.contains(number) && movementNumber == 17) || (movementNumber == 1 && tagNumber == 305) || (movementNumber == -1 && tagNumber == 0)) {
+        var arr: Set<Int> = []
+        for snakePixel in snakeArr {
+            arr.insert(snakePixel.tag)
+        }
+        if !((movementNumber == 1 && rightEdgeNumbers.contains(number)) || (movementNumber == -1 && leftEdgeNumber.contains(number)) || (snakeTagNumber.contains(number)) || (topRowNumber.contains(number) && movementNumber == -17) || (bottomRowNumber.contains(number) && movementNumber == 17) || (movementNumber == 1 && tagNumber == 305) || (movementNumber == -1 && tagNumber == 0) || (arr.contains(number))) {
             return true
         }
         
