@@ -75,7 +75,7 @@ class ViewController: UIViewController {
             let startingPoint = cellCollection.randomElement()!
             startingPoint.backgroundColor = .green
             snakeArr.append(startingPoint)
-            gameTimer = Timer.scheduledTimer(timeInterval: 0.1, target: self, selector: #selector(startMoving), userInfo: nil, repeats: true)
+            gameTimer = Timer.scheduledTimer(timeInterval: 0.05, target: self, selector: #selector(startMoving), userInfo: nil, repeats: true)
         }
     }
     
