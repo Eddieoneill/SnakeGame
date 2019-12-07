@@ -13,8 +13,10 @@ class ViewController: UIViewController {
     var cellCollection = [CustomCell]()
     var count = 0
     var cellCount = 0
+    var scoreCount = 0
     var gameTimer: Timer?
     var snakeArr = [CustomCell]()
+    var pixelSet: Set<Int> = []
     var rightEdgeNumbers: Set<Int> = [16, 33, 50, 67, 84, 101, 118, 135, 152, 169, 186, 203, 220, 237, 254, 271, 288, 305]
     var leftEdgeNumber: Set<Int> = [0, 17, 34, 51, 68, 85, 102, 119, 136, 153, 170, 187, 204, 221, 238, 255, 272, 289]
     var topRowNumber: Set<Int> =  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
@@ -53,7 +55,7 @@ class ViewController: UIViewController {
             }
             snakeArr = []
             cellCount = 0
-            
+            scoreCount = 0
             button.setTitle("Start", for: .normal)
             gameTimer?.invalidate()
         }
@@ -67,13 +69,13 @@ class ViewController: UIViewController {
         
         if cellCount == 306 {
             gameTimer?.invalidate()
-            for _ in 0...100 {
+            for _ in 0..<10 {
                 cellCollection.randomElement()?.backgroundColor = .red
             }
             let startingPoint = cellCollection.randomElement()!
             startingPoint.backgroundColor = .green
             snakeArr.append(startingPoint)
-            gameTimer = Timer.scheduledTimer(timeInterval: 0.075, target: self, selector: #selector(startMoving), userInfo: nil, repeats: true)
+            gameTimer = Timer.scheduledTimer(timeInterval: 0.1, target: self, selector: #selector(startMoving), userInfo: nil, repeats: true)
         }
     }
     
@@ -124,10 +126,9 @@ extension ViewController {
         var movablePixel = false
         var movingDirection = 0
         var randomMovement: Set<Int> = [1, -1, 17, -17]
-        
         while movablePixel == false {
             movingDirection = randomMovement.remove(randomMovement.randomElement()!)!
-            if containsInTheDict(movementNumber: movingDirection, tagNumber: snakeArr.last!.tag) { //  && movingDirection + snakeArr.last!.tag != previous
+            if snakeBodyPixel(movementNumber: movingDirection, tagNumber: snakeArr.last!.tag) { //  && movingDirection + snakeArr.last!.tag != previous
                 movablePixel = true
             } else if randomMovement.isEmpty {
                 gameTimer?.invalidate()
@@ -142,6 +143,8 @@ extension ViewController {
                 cellCollection[(snakeArr[snakeArr.count - 1].tag) + (movingDirection)].backgroundColor = .green
                 snakeArr.append(cellCollection[(snakeArr[snakeArr.count - 1].tag) + (movingDirection)])
                 randomMovement = []
+                sponeFood()
+                scoreCount += 1
             }
         }
         
@@ -164,11 +167,13 @@ extension ViewController {
                 }
             }
         }
+        print(scoreCount)
+        print("pixelSet: \(pixelSet)")
     }
     
-    func containsInTheDict(movementNumber: Int, tagNumber: Int) -> Bool {
+    func snakeBodyPixel(movementNumber: Int, tagNumber: Int) -> Bool {
         let number = movementNumber + tagNumber
-        var pixelSet: Set<Int> = []
+        pixelSet = []
         for snakePixel in snakeArr {
             pixelSet.insert(snakePixel.tag)
         }
@@ -177,6 +182,18 @@ extension ViewController {
         }
         
         return false
+    }
+    
+    func sponeFood() {
+        var emptySpots = Set(cellCollection)
+        
+        for _ in 0..<cellCollection.count {
+            let pixel = emptySpots.remove(emptySpots.randomElement()!)
+            if !pixelSet.contains(pixel!.tag) && pixel?.backgroundColor != .red {
+                pixel?.backgroundColor = .red
+                break
+            }
+        }
     }
 }
 
